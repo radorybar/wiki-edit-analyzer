@@ -16,7 +16,7 @@ This document contains a prioritized list of improvement tasks for the Wiki Edit
 [ ] Add comprehensive JavaDoc comments to all classes and methods
 [ ] Implement proper null checking and validation in all services
 [ ] Refactor the WikimediaStreamConsumer to use dependency injection for WebClient
-[ ] Extract configuration properties to a dedicated configuration class
+[x] Extract configuration properties to a dedicated configuration class
 [ ] Implement proper logging strategy with different log levels for different environments
 [ ] Add code style checks (e.g., Checkstyle, PMD) to enforce coding standards
 

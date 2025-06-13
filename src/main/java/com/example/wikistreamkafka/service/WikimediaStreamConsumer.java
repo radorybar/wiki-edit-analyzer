@@ -1,12 +1,12 @@
 package com.example.wikistreamkafka.service;
 
+import com.example.wikistreamkafka.config.ApplicationConfig;
 import com.example.wikistreamkafka.dto.WikimediaRecentChangeDto;
 import com.example.wikistreamkafka.mapper.WikiEventMapper;
 import com.example.wikistreamkafka.model.WikiEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationStartedEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.http.MediaType;
@@ -18,8 +18,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 @RequiredArgsConstructor
 public class WikimediaStreamConsumer {
 
-    @Value("${wikimedia.stream.url}")
-    private String wikiStreamUrl;
+    private final ApplicationConfig applicationConfig;
 
     private final KafkaProducerService kafkaProducerService;
     private final ObjectMapper objectMapper;
@@ -30,7 +29,7 @@ public class WikimediaStreamConsumer {
         log.info("Started consuming Wikimedia stream...");
 
         WebClient client = WebClient.builder()
-                .baseUrl(wikiStreamUrl)
+                .baseUrl(applicationConfig.getWikimedia().getStreamUrl())
                 .build();
 
         client.get()

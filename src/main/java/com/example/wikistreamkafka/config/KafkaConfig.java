@@ -1,20 +1,20 @@
 package com.example.wikistreamkafka.config;
 
 import org.apache.kafka.clients.admin.NewTopic;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.kafka.config.TopicBuilder;
+import lombok.RequiredArgsConstructor;
 
 @Configuration
+@RequiredArgsConstructor
 public class KafkaConfig {
-    
-    @Value("${kafka.topic.wiki-stream}")
-    private String wikiStreamTopic;
-    
+
+    private final ApplicationConfig applicationConfig;
+
     @Bean
     public NewTopic wikiTopic() {
-        return TopicBuilder.name(wikiStreamTopic)
+        return TopicBuilder.name(applicationConfig.getKafka().getTopicName())
                 .partitions(3)
                 .replicas(1)
                 .build();

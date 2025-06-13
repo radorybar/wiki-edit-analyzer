@@ -1,12 +1,12 @@
 package com.example.wikistreamkafka.service;
 
+import com.example.wikistreamkafka.config.ApplicationConfig;
 import com.example.wikistreamkafka.dto.WikimediaRecentChangeDto;
 import com.example.wikistreamkafka.model.WikiEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
@@ -20,11 +20,10 @@ public class KafkaProducerService {
 
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final ObjectMapper objectMapper;
-
-    @Value("${kafka.topic.wiki-stream}")
-    private String topicName;
+    private final ApplicationConfig applicationConfig;
 
     public void sendMessage(String message) {
+        String topicName = applicationConfig.getKafka().getTopicName();
         CompletableFuture<SendResult<String, String>> future = kafkaTemplate.send(topicName, message);
 
         future.whenComplete((result, ex) -> {
@@ -41,6 +40,7 @@ public class KafkaProducerService {
     public void sendMessage(WikimediaRecentChangeDto dto) {
         try {
             String jsonMessage = objectMapper.writeValueAsString(dto);
+            String topicName = applicationConfig.getKafka().getTopicName();
             CompletableFuture<SendResult<String, String>> future = kafkaTemplate.send(topicName, jsonMessage);
 
             future.whenComplete((result, ex) -> {
@@ -66,6 +66,7 @@ public class KafkaProducerService {
     public void sendMessage(WikiEvent event) {
         try {
             String jsonMessage = objectMapper.writeValueAsString(event);
+            String topicName = applicationConfig.getKafka().getTopicName();
             CompletableFuture<SendResult<String, String>> future = kafkaTemplate.send(topicName, jsonMessage);
 
             future.whenComplete((result, ex) -> {
