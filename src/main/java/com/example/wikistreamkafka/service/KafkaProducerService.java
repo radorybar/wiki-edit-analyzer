@@ -1,6 +1,7 @@
 package com.example.wikistreamkafka.service;
 
 import com.example.wikistreamkafka.dto.WikimediaRecentChangeDto;
+import com.example.wikistreamkafka.model.WikiEvent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
@@ -16,16 +17,16 @@ import java.util.concurrent.CompletableFuture;
 @Slf4j
 @RequiredArgsConstructor
 public class KafkaProducerService {
-    
+
     private final KafkaTemplate<String, String> kafkaTemplate;
     private final ObjectMapper objectMapper;
-    
+
     @Value("${kafka.topic.wiki-stream}")
     private String topicName;
-    
+
     public void sendMessage(String message) {
         CompletableFuture<SendResult<String, String>> future = kafkaTemplate.send(topicName, message);
-        
+
         future.whenComplete((result, ex) -> {
             if (ex == null) {
                 log.info("Sent message=[{}] with offset=[{}]", 
@@ -36,12 +37,12 @@ public class KafkaProducerService {
             }
         });
     }
-    
+
     public void sendMessage(WikimediaRecentChangeDto dto) {
         try {
             String jsonMessage = objectMapper.writeValueAsString(dto);
             CompletableFuture<SendResult<String, String>> future = kafkaTemplate.send(topicName, jsonMessage);
-            
+
             future.whenComplete((result, ex) -> {
                 if (ex == null) {
                     log.info("Sent DTO message with ID=[{}] and offset=[{}]", 
@@ -53,6 +54,31 @@ public class KafkaProducerService {
             });
         } catch (JsonProcessingException e) {
             log.error("Error serializing DTO to JSON: {}", e.getMessage(), e);
+        }
+    }
+
+    /**
+     * Sends a WikiEvent domain model to Kafka.
+     * The domain model is converted to JSON before sending.
+     *
+     * @param event The WikiEvent domain model to send
+     */
+    public void sendMessage(WikiEvent event) {
+        try {
+            String jsonMessage = objectMapper.writeValueAsString(event);
+            CompletableFuture<SendResult<String, String>> future = kafkaTemplate.send(topicName, jsonMessage);
+
+            future.whenComplete((result, ex) -> {
+                if (ex == null) {
+                    log.info("Sent WikiEvent message with ID=[{}] and offset=[{}]", 
+                            event.getId(), 
+                            result.getRecordMetadata().offset());
+                } else {
+                    log.error("Unable to send WikiEvent message with ID=[{}] due to : {}", event.getId(), ex.getMessage());
+                }
+            });
+        } catch (JsonProcessingException e) {
+            log.error("Error serializing WikiEvent to JSON: {}", e.getMessage(), e);
         }
     }
 }

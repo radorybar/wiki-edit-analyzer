@@ -5,7 +5,7 @@ This document contains a prioritized list of improvement tasks for the Wiki Edit
 ## Architecture Improvements
 
 [ ] Implement a proper layered architecture with clear separation of concerns
-[ ] Create a dedicated mapper service to convert between DTOs and domain models
+[x] Create a dedicated mapper service to convert between DTOs and domain models
 [ ] Implement a proper error handling strategy with custom exceptions
 [ ] Add a circuit breaker pattern for the Wikimedia stream connection
 [ ] Implement a message retry mechanism for failed Kafka messages
