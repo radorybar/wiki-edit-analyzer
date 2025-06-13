@@ -1,0 +1,21 @@
+# Git
+.git
+.gitignore
+
+# Maven
+target/*
+!target/*.jar
+
+# Kafka data
+kafka/data/
+
+# IDE files
+.idea/
+*.iml
+
+# Logs
+logs/
+*.log
+
+# GitHub Actions
+.github/
