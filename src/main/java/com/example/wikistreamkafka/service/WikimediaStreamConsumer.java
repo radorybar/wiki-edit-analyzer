@@ -1,6 +1,5 @@
 package com.example.wikistreamkafka.service;
 
-import com.example.wikistreamkafka.config.ApplicationConfig;
 import com.example.wikistreamkafka.dto.WikimediaRecentChangeDto;
 import com.example.wikistreamkafka.mapper.WikiEventMapper;
 import com.example.wikistreamkafka.model.WikiEvent;
@@ -13,26 +12,31 @@ import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 
+/**
+ * Service responsible for consuming the Wikimedia stream and publishing events to Kafka.
+ * This service connects to the Wikimedia SSE stream, processes the incoming data,
+ * and sends it to Kafka for further processing.
+ */
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class WikimediaStreamConsumer {
 
-    private final ApplicationConfig applicationConfig;
-
+    private final WebClient wikimediaWebClient;
     private final KafkaProducerService kafkaProducerService;
     private final ObjectMapper objectMapper;
     private final WikiEventMapper wikiEventMapper;
+    private final ValidationService validationService;
 
+    /**
+     * Starts consuming the Wikimedia stream and publishing events to Kafka.
+     * This method is triggered when the application starts.
+     */
     @EventListener(ApplicationStartedEvent.class)
     public void consumeStreamAndPublishToKafka() {
         log.info("Started consuming Wikimedia stream...");
 
-        WebClient client = WebClient.builder()
-                .baseUrl(applicationConfig.getWikimedia().getStreamUrl())
-                .build();
-
-        client.get()
+        wikimediaWebClient.get()
                 .accept(MediaType.TEXT_EVENT_STREAM)
                 .retrieve()
                 .bodyToFlux(String.class)
@@ -40,8 +44,32 @@ public class WikimediaStreamConsumer {
                         jsonData -> {
                             try {
                                 log.debug("Received JSON data: {}", jsonData);
+
+                                // Parse JSON to DTO
+                                if (jsonData == null || jsonData.isBlank()) {
+                                    log.warn("Received empty JSON data, skipping");
+                                    return;
+                                }
+
                                 WikimediaRecentChangeDto dto = objectMapper.readValue(jsonData, WikimediaRecentChangeDto.class);
+                                if (dto == null) {
+                                    log.warn("Failed to parse JSON data to DTO, skipping");
+                                    return;
+                                }
+
+                                // Convert DTO to domain model
                                 WikiEvent wikiEvent = wikiEventMapper.toWikiEvent(dto);
+                                if (wikiEvent == null) {
+                                    log.warn("Failed to convert DTO to WikiEvent, skipping");
+                                    return;
+                                }
+
+                                // Validate the domain model
+                                if (!validationService.isValid(wikiEvent)) {
+                                    log.warn("Invalid WikiEvent, skipping: {}", wikiEvent);
+                                    return;
+                                }
+
                                 log.info("Processed event with ID: {}, Title: {}", wikiEvent.getId(), wikiEvent.getTitle());
                                 kafkaProducerService.sendMessage(wikiEvent);
                             } catch (Exception e) {

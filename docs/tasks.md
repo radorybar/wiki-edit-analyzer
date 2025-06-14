@@ -13,21 +13,21 @@ This document contains a prioritized list of improvement tasks for the Wiki Edit
 
 ## Code Quality Improvements
 
-[ ] Add comprehensive JavaDoc comments to all classes and methods
-[ ] Implement proper null checking and validation in all services
-[ ] Refactor the WikimediaStreamConsumer to use dependency injection for WebClient
+[x] Add comprehensive JavaDoc comments to all classes and methods
+[x] Implement proper null checking and validation in all services
+[x] Refactor the WikimediaStreamConsumer to use dependency injection for WebClient
 [x] Extract configuration properties to a dedicated configuration class
 [ ] Implement proper logging strategy with different log levels for different environments
 [ ] Add code style checks (e.g., Checkstyle, PMD) to enforce coding standards
 
 ## Testing Improvements
 
-[ ] Add unit tests for all service classes
+[x] Add unit tests for all service classes
 [ ] Add integration tests for Kafka producer and consumer
 [ ] Implement end-to-end tests for the complete flow
 [ ] Add test coverage reporting
 [ ] Implement contract tests for the Wikimedia API
-[ ] Create test fixtures and test data generators
+[x] Create test fixtures and test data generators
 
 ## Performance Improvements
 
@@ -60,7 +60,7 @@ This document contains a prioritized list of improvement tasks for the Wiki Edit
 
 [ ] Add automated tests to the CI/CD pipeline
 [ ] Implement environment-specific configuration
-[ ] Add health checks to the Docker container
+[x] Add health checks to the Docker container
 [ ] Implement proper logging and monitoring in the production environment
 [ ] Add automated database migrations if a database is added
 [ ] Implement blue-green deployment strategy
