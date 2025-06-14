@@ -6,7 +6,7 @@ This document describes the implementation of a dedicated configuration class fo
 ## Changes Made
 
 ### 1. Created ApplicationConfig Class
-- Created a new configuration class `ApplicationConfig` in the `com.example.wikistreamkafka.config` package
+- Created a new configuration class `ApplicationConfig` in the `sk.fischio.wikistreamkafka.config` package
 - Used `@ConfigurationProperties` to bind properties with the "application" prefix
 - Organized properties into logical groups (Kafka, Wikimedia)
 - Added default values for properties to ensure the application works even if properties are not defined

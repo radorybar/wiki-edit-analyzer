@@ -6,7 +6,7 @@ This document describes the implementation of a dedicated mapper service for con
 ## Changes Made
 
 ### 1. Created WikiEventMapper
-- Created a new mapper service class `WikiEventMapper` in the `com.example.wikistreamkafka.mapper` package
+- Created a new mapper service class `WikiEventMapper` in the `sk.fischio.wikistreamkafka.mapper` package
 - Implemented methods to convert between `WikimediaRecentChangeDto` and `WikiEvent` domain model
 - Added comprehensive JavaDoc comments to explain the purpose and functionality
 - Implemented proper null checking to handle edge cases
