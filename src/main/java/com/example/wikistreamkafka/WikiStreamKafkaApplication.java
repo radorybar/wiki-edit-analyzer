@@ -11,9 +11,4 @@ public class WikiStreamKafkaApplication {
     public static void main(String[] args) {
         SpringApplication.run(WikiStreamKafkaApplication.class, args);
     }
-    
-    @Bean
-    public ObjectMapper objectMapper() {
-        return new ObjectMapper();
-    }
 }

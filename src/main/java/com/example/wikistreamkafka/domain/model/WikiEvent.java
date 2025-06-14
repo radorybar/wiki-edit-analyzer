@@ -29,11 +29,27 @@ public class WikiEvent {
 
     @NotNull(message = "Timestamp cannot be null")
     @PastOrPresent(message = "Timestamp must be in the past or present")
-    private Long timestamp;
+    private Instant timestamp;
 
     private String comment;
 
     private String server_url;
+
+    /**
+     * Custom setter for timestamp that can handle both Instant and Long values.
+     * If a Long is provided, it converts it to an Instant.
+     * 
+     * @param timestamp The timestamp value, either an Instant or a Long (milliseconds since epoch)
+     */
+    public void setTimestamp(Object timestamp) {
+        if (timestamp instanceof Instant) {
+            this.timestamp = (Instant) timestamp;
+        } else if (timestamp instanceof Long) {
+            this.timestamp = Instant.ofEpochMilli((Long) timestamp);
+        } else if (timestamp instanceof Number) {
+            this.timestamp = Instant.ofEpochMilli(((Number) timestamp).longValue());
+        }
+    }
 
     @NotBlank(message = "Wiki cannot be blank")
     private String wiki;
