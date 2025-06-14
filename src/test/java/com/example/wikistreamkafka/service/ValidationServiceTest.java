@@ -1,6 +1,8 @@
 package com.example.wikistreamkafka.service;
 
-import com.example.wikistreamkafka.model.WikiEvent;
+import com.example.wikistreamkafka.domain.model.WikiEvent;
+import com.example.wikistreamkafka.service.api.ValidationService;
+import com.example.wikistreamkafka.service.impl.ValidationServiceImpl;
 import jakarta.validation.Validator;
 import jakarta.validation.ValidatorFactory;
 import jakarta.validation.Validation;
@@ -22,7 +24,7 @@ class ValidationServiceTest {
     private Validator validator;
 
     @InjectMocks
-    private ValidationService validationService;
+    private ValidationServiceImpl validationService;
 
     private WikiEvent validWikiEvent;
     private WikiEvent invalidWikiEvent;
@@ -36,14 +38,14 @@ class ValidationServiceTest {
         validWikiEvent.setTitle("Test Page");
         validWikiEvent.setTimestamp(System.currentTimeMillis());
         validWikiEvent.setWiki("enwiki");
-        
+
         WikiEvent.Meta meta = new WikiEvent.Meta();
         meta.setUri("https://en.wikipedia.org/wiki/Test_Page");
         meta.setDomain("en.wikipedia.org");
         meta.setStream("mediawiki.recentchange");
         meta.setTopic("eqiad.mediawiki.recentchange");
         validWikiEvent.setMeta(meta);
-        
+
         // Create an invalid WikiEvent (missing required fields)
         invalidWikiEvent = new WikiEvent();
         invalidWikiEvent.setId("123");
@@ -54,69 +56,69 @@ class ValidationServiceTest {
     void isValid_withValidObject_returnsTrue() {
         // Arrange
         when(validator.validate(validWikiEvent)).thenReturn(java.util.Collections.emptySet());
-        
+
         // Act
         boolean result = validationService.isValid(validWikiEvent);
-        
+
         // Assert
         assertTrue(result);
         verify(validator).validate(validWikiEvent);
     }
-    
+
     @Test
     void isValid_withInvalidObject_returnsFalse() {
         // Arrange
         when(validator.validate(invalidWikiEvent)).thenReturn(
             java.util.Set.of(mock(jakarta.validation.ConstraintViolation.class))
         );
-        
+
         // Act
         boolean result = validationService.isValid(invalidWikiEvent);
-        
+
         // Assert
         assertFalse(result);
         verify(validator).validate(invalidWikiEvent);
     }
-    
+
     @Test
     void isValid_withNullObject_returnsFalse() {
         // Act
         boolean result = validationService.isValid(null);
-        
+
         // Assert
         assertFalse(result);
         verify(validator, never()).validate(any());
     }
-    
+
     @Test
     void validate_withValidObject_doesNotThrowException() {
         // Arrange
         when(validator.validate(validWikiEvent)).thenReturn(java.util.Collections.emptySet());
-        
+
         // Act & Assert
         assertDoesNotThrow(() -> validationService.validate(validWikiEvent));
         verify(validator).validate(validWikiEvent);
     }
-    
+
     @Test
     void validate_withInvalidObject_throwsIllegalArgumentException() {
         // Arrange
         jakarta.validation.ConstraintViolation<WikiEvent> violation = mock(jakarta.validation.ConstraintViolation.class);
         when(violation.getPropertyPath()).thenReturn(mock(jakarta.validation.Path.class));
         when(violation.getMessage()).thenReturn("must not be blank");
-        
+
         when(validator.validate(invalidWikiEvent)).thenReturn(java.util.Set.of(violation));
-        
+
         // Act & Assert
         IllegalArgumentException exception = assertThrows(
             IllegalArgumentException.class,
             () -> validationService.validate(invalidWikiEvent)
         );
-        
+
         assertTrue(exception.getMessage().contains("Validation failed"));
         verify(validator).validate(invalidWikiEvent);
     }
-    
+
     @Test
     void validate_withNullObject_throwsIllegalArgumentException() {
         // Act & Assert
@@ -124,7 +126,7 @@ class ValidationServiceTest {
             IllegalArgumentException.class,
             () -> validationService.validate(null)
         );
-        
+
         assertEquals("Object cannot be null", exception.getMessage());
         verify(validator, never()).validate(any());
     }

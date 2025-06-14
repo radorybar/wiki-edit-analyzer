@@ -1,8 +1,12 @@
 package com.example.wikistreamkafka.service;
 
-import com.example.wikistreamkafka.dto.WikimediaRecentChangeDto;
-import com.example.wikistreamkafka.mapper.WikiEventMapper;
-import com.example.wikistreamkafka.model.WikiEvent;
+import com.example.wikistreamkafka.api.dto.WikimediaRecentChangeDto;
+import com.example.wikistreamkafka.domain.model.WikiEvent;
+import com.example.wikistreamkafka.infrastructure.mapper.WikiEventMapper;
+import com.example.wikistreamkafka.service.api.KafkaProducerService;
+import com.example.wikistreamkafka.service.api.ValidationService;
+import com.example.wikistreamkafka.service.api.WikimediaStreamConsumer;
+import com.example.wikistreamkafka.service.impl.WikimediaStreamConsumerImpl;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -24,53 +28,53 @@ class WikimediaStreamConsumerTest {
 
     @Mock
     private WebClient wikimediaWebClient;
-    
+
     @Mock
     private WebClient.RequestHeadersUriSpec requestHeadersUriSpec;
-    
+
     @Mock
     private WebClient.RequestHeadersSpec requestHeadersSpec;
-    
+
     @Mock
     private WebClient.ResponseSpec responseSpec;
-    
+
     @Mock
     private KafkaProducerService kafkaProducerService;
-    
+
     @Mock
     private ObjectMapper objectMapper;
-    
+
     @Mock
     private WikiEventMapper wikiEventMapper;
-    
+
     @Mock
     private ValidationService validationService;
-    
+
     @InjectMocks
-    private WikimediaStreamConsumer wikimediaStreamConsumer;
-    
+    private WikimediaStreamConsumerImpl wikimediaStreamConsumer;
+
     private WikimediaRecentChangeDto validDto;
     private WikiEvent validWikiEvent;
     private String validJsonData;
-    
+
     @BeforeEach
     void setUp() throws Exception {
         // Setup WebClient mock chain
         when(wikimediaWebClient.get()).thenReturn(requestHeadersUriSpec);
         when(requestHeadersUriSpec.accept(any(MediaType.class))).thenReturn(requestHeadersSpec);
         when(requestHeadersSpec.retrieve()).thenReturn(responseSpec);
-        
+
         // Create test data
         validJsonData = "{\"id\":\"123\",\"type\":\"edit\"}";
-        
+
         validDto = new WikimediaRecentChangeDto();
         // Set properties on validDto
-        
+
         validWikiEvent = new WikiEvent();
         validWikiEvent.setId("123");
         validWikiEvent.setType("edit");
         validWikiEvent.setTitle("Test Page");
-        
+
         WikiEvent.Meta meta = new WikiEvent.Meta();
         meta.setUri("https://en.wikipedia.org/wiki/Test_Page");
         meta.setDomain("en.wikipedia.org");
@@ -78,7 +82,7 @@ class WikimediaStreamConsumerTest {
         meta.setTopic("eqiad.mediawiki.recentchange");
         validWikiEvent.setMeta(meta);
     }
-    
+
     @Test
     void consumeStreamAndPublishToKafka_withValidData_sendsMessageToKafka() throws Exception {
         // Arrange
@@ -86,65 +90,65 @@ class WikimediaStreamConsumerTest {
         when(objectMapper.readValue(validJsonData, WikimediaRecentChangeDto.class)).thenReturn(validDto);
         when(wikiEventMapper.toWikiEvent(validDto)).thenReturn(validWikiEvent);
         when(validationService.isValid(validWikiEvent)).thenReturn(true);
-        
+
         // Act
         wikimediaStreamConsumer.consumeStreamAndPublishToKafka();
-        
+
         // Assert
         verify(kafkaProducerService).sendMessage(validWikiEvent);
     }
-    
+
     @Test
     void consumeStreamAndPublishToKafka_withNullJsonData_doesNotSendMessageToKafka() {
         // Arrange
-        when(responseSpec.bodyToFlux(String.class)).thenReturn(Flux.just((String)null));
-        
+        when(responseSpec.bodyToFlux(String.class)).thenReturn(Flux.empty());
+
         // Act
         wikimediaStreamConsumer.consumeStreamAndPublishToKafka();
-        
+
         // Assert
         verify(kafkaProducerService, never()).sendMessage(any(WikiEvent.class));
     }
-    
+
     @Test
     void consumeStreamAndPublishToKafka_withEmptyJsonData_doesNotSendMessageToKafka() {
         // Arrange
         when(responseSpec.bodyToFlux(String.class)).thenReturn(Flux.just(""));
-        
+
         // Act
         wikimediaStreamConsumer.consumeStreamAndPublishToKafka();
-        
+
         // Assert
         verify(kafkaProducerService, never()).sendMessage(any(WikiEvent.class));
     }
-    
+
     @Test
     void consumeStreamAndPublishToKafka_withNullDto_doesNotSendMessageToKafka() throws Exception {
         // Arrange
         when(responseSpec.bodyToFlux(String.class)).thenReturn(Flux.just(validJsonData));
         when(objectMapper.readValue(validJsonData, WikimediaRecentChangeDto.class)).thenReturn(null);
-        
+
         // Act
         wikimediaStreamConsumer.consumeStreamAndPublishToKafka();
-        
+
         // Assert
         verify(kafkaProducerService, never()).sendMessage(any(WikiEvent.class));
     }
-    
+
     @Test
     void consumeStreamAndPublishToKafka_withNullWikiEvent_doesNotSendMessageToKafka() throws Exception {
         // Arrange
         when(responseSpec.bodyToFlux(String.class)).thenReturn(Flux.just(validJsonData));
         when(objectMapper.readValue(validJsonData, WikimediaRecentChangeDto.class)).thenReturn(validDto);
         when(wikiEventMapper.toWikiEvent(validDto)).thenReturn(null);
-        
+
         // Act
         wikimediaStreamConsumer.consumeStreamAndPublishToKafka();
-        
+
         // Assert
         verify(kafkaProducerService, never()).sendMessage(any(WikiEvent.class));
     }
-    
+
     @Test
     void consumeStreamAndPublishToKafka_withInvalidWikiEvent_doesNotSendMessageToKafka() throws Exception {
         // Arrange
@@ -152,23 +156,23 @@ class WikimediaStreamConsumerTest {
         when(objectMapper.readValue(validJsonData, WikimediaRecentChangeDto.class)).thenReturn(validDto);
         when(wikiEventMapper.toWikiEvent(validDto)).thenReturn(validWikiEvent);
         when(validationService.isValid(validWikiEvent)).thenReturn(false);
-        
+
         // Act
         wikimediaStreamConsumer.consumeStreamAndPublishToKafka();
-        
+
         // Assert
         verify(kafkaProducerService, never()).sendMessage(any(WikiEvent.class));
     }
-    
+
     @Test
     void consumeStreamAndPublishToKafka_withException_doesNotSendMessageToKafka() throws Exception {
         // Arrange
         when(responseSpec.bodyToFlux(String.class)).thenReturn(Flux.just(validJsonData));
         when(objectMapper.readValue(anyString(), eq(WikimediaRecentChangeDto.class))).thenThrow(new RuntimeException("Test exception"));
-        
+
         // Act
         wikimediaStreamConsumer.consumeStreamAndPublishToKafka();
-        
+
         // Assert
         verify(kafkaProducerService, never()).sendMessage(any(WikiEvent.class));
     }
