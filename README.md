@@ -39,12 +39,21 @@ java -jar target/wiki-stream-kafka-0.0.1-SNAPSHOT.jar
 This project includes a GitHub Actions workflow for automated build and deployment to a Linux server.
 
 1. Set up the following secrets in your GitHub repository:
-   - `SSH_HOST`: The hostname or IP address of your Linux server
-   - `SSH_USERNAME`: The username for SSH access
-   - `SSH_KEY`: The private SSH key for authentication
-   - `SSH_PORT`: (Optional) The SSH port number if not using the default port 22
+   - `DOCKER_HUB_USERNAME`: Your Docker Hub username
+   - `DOCKER_HUB_TOKEN`: Your Docker Hub access token (create one in Docker Hub account settings)
+   - `REMOTE_HOST`: The hostname or IP address of your Linux server
+   - `REMOTE_USER`: The username for SSH access to your server
+   - `SSH_PRIVATE_KEY`: The private SSH key for authentication
 
-2. Push changes to the `main` branch to trigger automatic deployment
+2. Make sure Docker and Docker Compose are installed on your remote server.
+
+3. Push changes to the `main` branch to trigger automatic deployment, or manually trigger the workflow from the GitHub Actions tab.
+
+The workflow will:
+- Build the Java application with Maven
+- Build and push the Docker image to Docker Hub
+- Deploy the application to your remote server using Docker Compose
+- Set up Kafka and Zookeeper alongside your application
 
 ### Manual Deployment
 

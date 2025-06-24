@@ -1,0 +1,96 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+      
+    - name: Set up JDK 21
+      uses: actions/setup-java@v3
+      with:
+        java-version: '21'
+        distribution: 'temurin'
+        cache: maven
+        
+    - name: Build with Maven
+      run: mvn -B clean package
+      
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+      
+    - name: Login to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_HUB_USERNAME }}
+        password: ${{ secrets.DOCKER_HUB_TOKEN }}
+        
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        push: true
+        tags: ${{ secrets.DOCKER_HUB_USERNAME }}/wiki-stream-kafka:latest
+        
+    - name: Deploy to remote server
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.REMOTE_HOST }}
+        username: ${{ secrets.REMOTE_USER }}
+        key: ${{ secrets.SSH_PRIVATE_KEY }}
+        script: |
+          # Create deployment directory if it doesn't exist
+          mkdir -p ~/wiki-stream-kafka
+          
+          # Create docker-compose.yml for deployment
+          cat > ~/wiki-stream-kafka/docker-compose.yml << 'EOL'
+          version: '3'
+          services:
+            zookeeper:
+              image: confluentinc/cp-zookeeper:latest
+              environment:
+                ZOOKEEPER_CLIENT_PORT: 2181
+              ports:
+                - "2181:2181"
+                
+            kafka:
+              image: confluentinc/cp-kafka:latest
+              depends_on:
+                - zookeeper
+              ports:
+                - "9092:9092"
+              environment:
+                KAFKA_BROKER_ID: 1
+                KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+                KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+                KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+                KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+                KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+              volumes:
+                - ./kafka/data:/var/lib/kafka/data
+          
+            app:
+              image: ${{ secrets.DOCKER_HUB_USERNAME }}/wiki-stream-kafka:latest
+              depends_on:
+                - kafka
+              ports:
+                - "8080:8080"
+              environment:
+                - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+              restart: unless-stopped
+          
+          volumes:
+            kafka_data:
+          EOL
+          
+          # Pull the latest image and restart the containers
+          cd ~/wiki-stream-kafka
+          docker-compose pull app
+          docker-compose up -d
