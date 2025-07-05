@@ -6,7 +6,7 @@ services:
       ZOOKEEPER_CLIENT_PORT: 2181
     ports:
       - "2181:2181"
-      
+
   kafka:
     image: confluentinc/cp-kafka:latest
     depends_on:
@@ -32,6 +32,5 @@ services:
     environment:
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
     restart: unless-stopped
-
-volumes:
-  kafka_data:
+    volumes:
+      - ./app/logs:/app/logs
