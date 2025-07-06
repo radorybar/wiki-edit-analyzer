@@ -78,7 +78,7 @@ jobs:
                 - kafka_data:/var/lib/kafka/data
 
             app:
-              image: wiki-stream-kafka:latest
+              image: ${DOCKER_HUB_USERNAME}/wiki-stream-kafka:latest
               depends_on:
                 - kafka
               ports:
