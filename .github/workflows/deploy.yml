@@ -78,7 +78,6 @@ jobs:
                 - kafka_data:/var/lib/kafka/data
 
             app:
-              build: .
               image: wiki-stream-kafka:latest
               depends_on:
                 - kafka
