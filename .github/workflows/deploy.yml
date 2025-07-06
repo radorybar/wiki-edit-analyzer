@@ -8,37 +8,37 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
-      
+
     - name: Set up JDK 21
       uses: actions/setup-java@v3
       with:
         java-version: '21'
         distribution: 'temurin'
         cache: maven
-        
+
     - name: Build with Maven
       run: mvn -B clean package
-      
+
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
-      
+
     - name: Login to Docker Hub
       uses: docker/login-action@v2
       with:
         username: ${{ secrets.DOCKER_HUB_USERNAME }}
         password: ${{ secrets.DOCKER_HUB_TOKEN }}
-        
+
     - name: Build and push Docker image
       uses: docker/build-push-action@v4
       with:
         context: .
         push: true
         tags: ${{ secrets.DOCKER_HUB_USERNAME }}/wiki-stream-kafka:latest
-        
+
     - name: Deploy to remote server
       uses: appleboy/ssh-action@master
       with:
@@ -48,9 +48,10 @@ jobs:
         script: |
           # Create deployment directory if it doesn't exist
           mkdir -p ~/wiki-stream-kafka
-          
+
           # Create docker-compose.yml for deployment
-          cat > ~/wiki-stream-kafka/docker-compose.yml << 'EOL'
+          DOCKER_HUB_USERNAME="${{ secrets.DOCKER_HUB_USERNAME }}"
+          cat > ~/wiki-stream-kafka/docker-compose.yml << EOL
           version: '3'
           services:
             zookeeper:
@@ -59,7 +60,7 @@ jobs:
                 ZOOKEEPER_CLIENT_PORT: 2181
               ports:
                 - "2181:2181"
-                
+
             kafka:
               image: confluentinc/cp-kafka:latest
               depends_on:
@@ -75,9 +76,9 @@ jobs:
                 KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
               volumes:
                 - kafka_data:/var/lib/kafka/data
-          
+
             app:
-              image: wiki-stream-kafka:latest
+              image: ${DOCKER_HUB_USERNAME}/wiki-stream-kafka:latest
               depends_on:
                 - kafka
               ports:
@@ -85,11 +86,11 @@ jobs:
               environment:
                 - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
               restart: unless-stopped
-          
+
           volumes:
             kafka_data:
           EOL
-          
+
           # Pull the latest image and restart the containers
           cd ~/wiki-stream-kafka
           docker-compose pull app
