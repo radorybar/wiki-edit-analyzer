@@ -55,14 +55,14 @@ jobs:
           version: '3'
           services:
             zookeeper:
-              image: confluentinc/cp-zookeeper:latest
+              image: confluentinc/cp-zookeeper:7.2.0
               environment:
                 ZOOKEEPER_CLIENT_PORT: 2181
               ports:
                 - "2181:2181"
-
+          
             kafka:
-              image: confluentinc/cp-kafka:latest
+              image: confluentinc/cp-kafka:7.2.0
               depends_on:
                 - zookeeper
               ports:
@@ -76,9 +76,10 @@ jobs:
                 KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
               volumes:
                 - kafka_data:/var/lib/kafka/data
-
+          
             app:
-              image: ${DOCKER_HUB_USERNAME}/wiki-stream-kafka:latest
+              build: .
+              image: wiki-stream-kafka:latest
               depends_on:
                 - kafka
               ports:
@@ -86,12 +87,12 @@ jobs:
               environment:
                 - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
               restart: unless-stopped
-
+          
           volumes:
             kafka_data:
           EOL
 
           # Pull the latest image and restart the containers
           cd ~/wiki-stream-kafka
-          docker-compose pull app
-          docker-compose up -d
+          docker compose pull app
+          docker compose up -d

@@ -3,6 +3,7 @@
 
 # create priv/pub keys
 - put public key into allowed keys: `/home/wiki-edit-analyzer/.ssh/authorized_keys`
+- `ssh-keygen -t rsa -b 4096 -C "wiki-edit-analyzer@fischo.sk"`
 - use private key in github secrets (with all content)
 
 # install docker on linux
