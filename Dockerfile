@@ -5,7 +5,7 @@ WORKDIR /app
 # Install curl for health checks
 RUN apk --no-cache add curl
 
-# Add application jar file
+# Add application jar file (assumes 'mvn package' was run before building the image)
 COPY target/*.jar app.jar
 
 # Create volume for logs
